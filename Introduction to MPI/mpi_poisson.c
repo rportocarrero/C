@@ -6,7 +6,13 @@
 #define GRIDSIZE 10
 
 double poisson_step(float *u, float *unew, float *rho, float hsq, int points){
-    double unorm;
+    double unorm, global_unorm;
+    float sendbuf, recvbuf;
+    MPI_Status mpi_status;
+    int rank, n_ranks;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &n_ranks);
 
     for (int i=1; i<= points; i++){
         float difference = u[i-1] + u[i+1];
@@ -19,11 +25,30 @@ double poisson_step(float *u, float *unew, float *rho, float hsq, int points){
         unorm += diff * diff; 
     }
 
+    MPI_Allreduce(&unorm, &global_unorm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
     for(int i=1;i<=points;i++){
         u[i] = unew[i];
     }
 
-    return unorm;
+    if ((rank%2) == 1){
+        sendbuf = unew[1];
+        MPI_Send(&sendbuf, 1, MPI_FLOAT, rank-1, 1, MPI_COMM_WORLD);
+        MPI_Recv(&recvbuf, 1, MPI_FLOAT, rank-1, 2, MPI_COMM_WORLD, &mpi_status);
+        u[0] = recvbuf;
+
+        if(rank != (n_ranks-1)){
+            MPI_Recv(&u[points+1], 1, MPI_FLOAT, rank+1, 2, MPI_COMM_WORLD, &mpi_status);
+            MPI_Send(&u[points], 1, MPI_FLOAT, rank+1, 1, MPI_COMM_WORLD);
+        }
+    } else {
+        if( rank != 0){
+            MPI_Recv(&u[0], 1, MPI_FLOAT, rank-1, 1, MPI_COMM_WORLD, &mpi_status);
+            MPI_Send(&u[points], 1, MPI_FLOAT, rank+1, 2, MPI_COMM_WORLD);
+        }
+    }
+
+    return global_unorm;
 }
 
 int main(int argc, char** argv){
