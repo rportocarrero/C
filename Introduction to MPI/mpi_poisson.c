@@ -27,30 +27,39 @@ double poisson_step(float *u, float *unew, float *rho, float hsq, int points){
 
 int main(int argc, char** argv){
     
+    int i, j;
     float u[GRIDSIZE+2], unew[GRIDSIZE+2], rho[GRIDSIZE+2];
-    int i;
     float h, hsq;
-    double unorm, residual;
+    double unorm;
 
     h = 0.1;
-    hsq = h * h;
-    residual = 1e-5;
 
-    for(i = 0; i<=GRIDSIZE;i++){
+    hsq = h*h;
+
+    for(int i=0; i<=GRIDSIZE+1;i++){
         u[i] = 0.0;
         rho[i] = 0.0;
     }
 
-    u[0] = 10.0;
+    u[0] = 10;
 
-    for(i=0; i<10000;i++){
-        unorm = poisson_step(u, unew, rho, hsq, GRIDSIZE);
-        printf("Iteration %d: Residual %g\n", i, unorm);
+    unorm = poisson_step(u, unew, rho, hsq, GRIDSIZE);
 
-        if(sqrt(unorm) < sqrt(residual)){
-            break;
-        }
+    if(unorm == 25){
+        printf("TEST SUCCEEDED after 1 iteration\n");
+    } else {
+        printf("TEST FAILED after 1 iteration\n");
+        printf("Norm %g\n", unorm);
     }
 
-    printf("Run completed with residual %g\n", unorm);
+    for(i =1; i<10; i++){
+        unorm = poisson_step(u, unew, rho, hsq, GRIDSIZE);
+    }
+
+    if( fabs(unorm- 0.463676) < 1e-6){
+        printf("TEST SUCCEEDED after 10 iterations\n");
+    } else {
+        printf("TEST FAILED after 10 iterations\n");
+        printf("Norm %g\n", unorm);
+    }
 }
