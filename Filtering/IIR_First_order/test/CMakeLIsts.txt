@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(IIR_tests)
+
+find_package(GTest REQUIRED)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
+
+add_executable(IIR_tests
+  test_IirFIrstOrder.cpp)
+
+target_link_libraries(IIR_tests
+  PRIVATE
+    GTest::Main
+    iirFirstOrder)
+
+
+enable_testing()
+add_test(IIR_tests IIR_tests)
